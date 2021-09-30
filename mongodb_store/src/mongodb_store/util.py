@@ -14,6 +14,7 @@ if float(platform.python_version()[0:2]) >= 3.0:
 else:
     _PY3 = False
     import StringIO
+import io;
 from mongodb_store_msgs.msg import SerialisedMessage
 from mongodb_store_msgs.srv import MongoQueryMsgRequest
 
@@ -520,7 +521,9 @@ def serialise_message(message):
     :Returns:
         | mongodb_store_msgs.msg.SerialisedMessage: A serialies copy of message
     """
-    buf=StringIO.StringIO()
+    # buf=StringIO.StringIO()  
+    buf = io.BytesIO();
+    print(type(message));
     message.serialize(buf)
     serialised_msg = SerialisedMessage()
     serialised_msg.msg = buf.getvalue()
