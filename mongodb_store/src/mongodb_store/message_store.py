@@ -270,12 +270,18 @@ class MessageStoreProxy:
 
         rospy.logwarn("\tPost query_srv")
 
+        print(response.messages);
+
         if response.messages is None:
             messages = []
             metas = []
         else:
-            messages = map(dc_util.deserialise_message, response.messages)
-            metas = map(dc_util.string_pair_list_to_dictionary, response.metas)
+            messages = list(map(dc_util.deserialise_message, response.messages))
+            metas = list(map(dc_util.string_pair_list_to_dictionary, response.metas))
+
+        # print(messages);
+        # print(list(messages));
+        # print(dir(messages));
 
         if single:
             if len(messages) > 0:
