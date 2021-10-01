@@ -175,7 +175,7 @@ def msg_to_document(msg):
 
     return d
 
-def sanitize_value(attr, v, type):
+def sanitize_value(attr, v, type_):
     """
     De-rosify a msg.
 
@@ -185,7 +185,7 @@ def sanitize_value(attr, v, type):
     :Args:
         | attr(str): the ROS message slot name the value came from
         | v: the value from the message's slot to make into a MongoDB able type
-        | type (str): The ROS type of the value passed, as given by the ressage slot_types member.
+        | type_ (str): The ROS type of the value passed, as given by the ressage slot_types member.
     :Returns:
         | A sanitized version of v.
     """
@@ -196,14 +196,18 @@ def sanitize_value(attr, v, type):
         # print type
         # print v
 
+    # rospy.logwarn("\tIn sanitize_value(...)")
+
     if isinstance(v, str):
-        if type == 'uint8[]':
+        if type_ == 'uint8[]':
             v = Binary(v)
         else:
             # ensure unicode
             try:
                 if _PY3:
-                    v = str(v, "utf-8")
+                    pass;
+                    # v = v.encode("utf-8", "ignore");
+                    # v = str(v, "utf-8")
                 else:
                     v = unicode(v, "utf-8")
             except UnicodeDecodeError as e:
@@ -315,12 +319,16 @@ def fill_message(message, document):
     for slot, slot_type in zip(message.__slots__,
                                getattr(message,"_slot_types",[""]*len(message.__slots__))):
 
+        # print("\t\t", slot, slot_type);
+
         # This check is required since objects returned with projection queries can have absent keys
         if slot in document.keys():
             value = document[slot]
         # fill internal structures if value is a dictionary itself
             if isinstance(value, dict):
+                # print("\t\t\tRecurse 1");
                 fill_message(getattr(message, slot), value)
+                # print("\t\t\tEND Recurse 1");
             elif isinstance(value, list) and slot_type.find("/")!=-1:
             # if its a list and the type is some message (contains a "/")
                 lst=[]
@@ -329,14 +337,37 @@ def fill_message(message, document):
                 msg_class = load_class(msg_type)
                 for i in value:
                     msg = msg_class()
+                    # print("\t\t\tRecurse 2");
                     fill_message(msg, i)
+                    # print("\t\t\tEND Recurse 2");
                     lst.append(msg)
+                    # print("\t\t\t\tSetting attribute 1", slot, lst);
                     setattr(message, slot, lst)
             else:
                 if ( (not _PY3 and isinstance(value, unicode)) or
                     (_PY3 and isinstance(value, str)) ):
-                    setattr(message, slot, value.encode('utf-8'))
-                else:
+                    # print("\t\t\t\tSetting attribute 2", slot, value);
+                    setattr(message, slot, value)
+                elif '[' in slot_type:
+                    if _PY3 and isinstance(value, list):
+                        # Assumes all the elements are of the type 'bytes'
+                        adding = []
+                        for element in value:
+                            if isinstance(element, bytes):
+                                element:bytes;
+                                adding.append(element.decode('utf-8'));
+                            else:
+                                adding.append(element);
+                        # print("\t\t\t\tSetting attribute 5", slot, adding);
+                        setattr(message, slot, adding);
+                    else:
+                        # print("\t\t\t\tSetting attribute 6", slot, []);
+                        setattr(message, slot, []);
+                elif _PY3 and isinstance(value, bytes):
+                    # print("\t\t\t\tSetting attribute 4", slot, value);
+                    setattr(message, slot, value.decode('utf-8'))
+                else:                    
+                    # print("\t\t\t\tSetting attribute 3", slot, value);
                     setattr(message, slot, value)
 
 def dictionary_to_message(dictionary, cls):
@@ -366,9 +397,16 @@ def dictionary_to_message(dictionary, cls):
       z: 0.0
       w: 0.0
     """
+    # rospy.logwarn("\t\tIn dictionary_to_message(...)")
+
     message = cls()
 
+    # rospy.logwarn("\t\tPost creation of message");
+    # print(message);
+
     fill_message(message, dictionary)
+    # rospy.logwarn("\t\tPost fill_message");
+    # print(message);
 
     return message
 
@@ -521,9 +559,13 @@ def serialise_message(message):
     :Returns:
         | mongodb_store_msgs.msg.SerialisedMessage: A serialies copy of message
     """
+    # rospy.logwarn("\t\tIn serialise_message(...)")
     # buf=StringIO.StringIO()  
     buf = io.BytesIO();
-    print(type(message));
+    # print(type(message));    
+    # print(message);
+    # print(message.cloud.data);
+    # print(type(message.cloud.data));
     message.serialize(buf)
     serialised_msg = SerialisedMessage()
     serialised_msg.msg = buf.getvalue()

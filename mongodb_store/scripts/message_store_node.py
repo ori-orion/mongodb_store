@@ -239,6 +239,7 @@ class MessageStore(object):
         """
         Returns t
         """
+        # rospy.logwarn("\tIn query_messages_ros_srv(...)")
         collection = self._mongo_client[req.database][req.collection]
 
         # build the query doc
@@ -291,13 +292,20 @@ class MessageStore(object):
         serialised_messages = ()
         metas = ()
 
+        # rospy.logwarn("\tPre for loop")
+        # print(message);
+
         for idx, entry in enumerate(entries):
+            # print("For loop iteration");
 
             # load the class object for this type
             # TODO this should be the same for every item in the list, so could reuse
             cls = dc_util.load_class(entry["_meta"]["stored_class"])
             # instantiate the ROS message object from the dictionary retrieved from the db
             message = dc_util.dictionary_to_message(entry, cls)
+
+            # print(message);    
+            # message.cloud.data = [];    # Plaster rather than actual fix.
             # the serialise this object in order to be sent in a generic form
             serialised_messages = serialised_messages + (dc_util.serialise_message(message), )
             # add ObjectID into meta as it might be useful later
