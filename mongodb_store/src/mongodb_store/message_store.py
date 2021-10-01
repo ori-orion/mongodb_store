@@ -101,19 +101,13 @@ class MessageStoreProxy:
             | (str) the ObjectId of the MongoDB document containing the stored message.
 
         """
-        print("\t\tIn insert(...)")
         # assume meta is a dict, convert k/v to tuple pairs
-        meta_tuple = (StringPair(dc_srv.MongoQueryMsgRequest.JSON_QUERY, json.dumps(meta, default=json_util.default)),)
-        print("\t\tPre serialization");
-        serialised_msg = dc_util.serialise_message(message)
-        print("\t\tPost serialisation")
-        if wait:
-            print("\t\tWaiting")
+        meta_tuple = (StringPair(dc_srv.MongoQueryMsgRequest.JSON_QUERY, json.dumps(meta, default=json_util.default)),)        
+        serialised_msg = dc_util.serialise_message(message)        
+        if wait:            
             return self.insert_srv(self.database, self.collection, serialised_msg, StringPairList(meta_tuple)).id
-        else:
-            print("\t\tNot waiting");
-            msg = Insert(self.database, self.collection, serialised_msg, StringPairList(meta_tuple))
-            print("\t\Pre publish");
+        else:            
+            msg = Insert(self.database, self.collection, serialised_msg, StringPairList(meta_tuple))            
             self.pub_insert.publish(msg)
             return True
 
@@ -244,22 +238,18 @@ class MessageStoreProxy:
             | [message, meta] where message is the queried message and meta a dictionary of
               meta information. If single is false returns a list of these lists.
         """
-        rospy.logwarn("\tIn query(...)")
+        
         # assume meta is a dict, convert k/v to tuple pairs for ROS msg type
 
         # serialise the json queries to strings using json_util.dumps
         message_tuple = (StringPair(dc_srv.MongoQueryMsgRequest.JSON_QUERY, json.dumps(message_query, default=json_util.default)),)
         meta_tuple = (StringPair(dc_srv.MongoQueryMsgRequest.JSON_QUERY, json.dumps(meta_query, default=json_util.default)),)
-        projection_tuple =(StringPair(dc_srv.MongoQueryMsgRequest.JSON_QUERY, json.dumps(projection_query, default=json_util.default)),)
-
-        rospy.logwarn("\tPost tuple section. Pre len section.")
+        projection_tuple =(StringPair(dc_srv.MongoQueryMsgRequest.JSON_QUERY, json.dumps(projection_query, default=json_util.default)),)        
 
         if len(sort_query) > 0:
                 sort_tuple = [StringPair(str(k), str(v)) for k, v in sort_query]
         else:
-                sort_tuple = []
-
-        rospy.logwarn("\tPre query_srv")
+                sort_tuple = []        
 
         response = self.query_srv(
                             self.database, self.collection, type, single, limit,
@@ -268,20 +258,12 @@ class MessageStoreProxy:
                             StringPairList(sort_tuple),
                             StringPairList(projection_tuple))
 
-        rospy.logwarn("\tPost query_srv")
-
-        print(response.messages);
-
         if response.messages is None:
             messages = []
             metas = []
         else:
             messages = list(map(dc_util.deserialise_message, response.messages))
             metas = list(map(dc_util.string_pair_list_to_dictionary, response.metas))
-
-        # print(messages);
-        # print(list(messages));
-        # print(dir(messages));
 
         if single:
             if len(messages) > 0:

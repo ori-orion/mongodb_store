@@ -171,3 +171,6 @@ rosrun mongodb_store replicator_client.py message_store robblog scheduling_probl
 
 **NOTE THAT this all makes `update` operations a bit uncertain, so please do not use this type of replication on collections you plan to use update on.**
 
+## NOTE
+
+In the course of the transition to `noetic`, I had to do some bug fixing within `mongodb_store/src/mongodb_store/utils.py`. `utils.py::fill_message(...)` is a slight brute force way of doing it and could probably be made slightly more concice. 

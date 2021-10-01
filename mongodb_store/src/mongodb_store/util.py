@@ -317,36 +317,27 @@ def fill_message(message, document):
       w: 0.0
     """
     for slot, slot_type in zip(message.__slots__,
-                               getattr(message,"_slot_types",[""]*len(message.__slots__))):
-
-        # print("\t\t", slot, slot_type);
+                               getattr(message,"_slot_types",[""]*len(message.__slots__))):        
 
         # This check is required since objects returned with projection queries can have absent keys
         if slot in document.keys():
             value = document[slot]
-        # fill internal structures if value is a dictionary itself
-            if isinstance(value, dict):
-                # print("\t\t\tRecurse 1");
-                fill_message(getattr(message, slot), value)
-                # print("\t\t\tEND Recurse 1");
+            # fill internal structures if value is a dictionary itself
+            if isinstance(value, dict):            
+                fill_message(getattr(message, slot), value)                
             elif isinstance(value, list) and slot_type.find("/")!=-1:
-            # if its a list and the type is some message (contains a "/")
+                # if its a list and the type is some message (contains a "/")
                 lst=[]
-            # Remove [] from message type ([:-2])
+                # Remove [] from message type ([:-2])
                 msg_type = type_to_class_string(slot_type[:-2])
                 msg_class = load_class(msg_type)
                 for i in value:
-                    msg = msg_class()
-                    # print("\t\t\tRecurse 2");
-                    fill_message(msg, i)
-                    # print("\t\t\tEND Recurse 2");
-                    lst.append(msg)
-                    # print("\t\t\t\tSetting attribute 1", slot, lst);
+                    msg = msg_class()                    
+                    fill_message(msg, i)                    
+                    lst.append(msg)                    
                     setattr(message, slot, lst)
             else:
-                if ( (not _PY3 and isinstance(value, unicode)) or
-                    (_PY3 and isinstance(value, str)) ):
-                    # print("\t\t\t\tSetting attribute 2", slot, value);
+                if ( (not _PY3 and isinstance(value, unicode)) or (_PY3 and isinstance(value, str)) ):                    
                     setattr(message, slot, value)
                 elif '[' in slot_type:
                     if _PY3 and isinstance(value, list):
@@ -357,17 +348,13 @@ def fill_message(message, document):
                                 element:bytes;
                                 adding.append(element.decode('utf-8'));
                             else:
-                                adding.append(element);
-                        # print("\t\t\t\tSetting attribute 5", slot, adding);
+                                adding.append(element);                        
                         setattr(message, slot, adding);
-                    else:
-                        # print("\t\t\t\tSetting attribute 6", slot, []);
+                    else:                        
                         setattr(message, slot, []);
-                elif _PY3 and isinstance(value, bytes):
-                    # print("\t\t\t\tSetting attribute 4", slot, value);
+                elif _PY3 and isinstance(value, bytes):                    
                     setattr(message, slot, value.decode('utf-8'))
-                else:                    
-                    # print("\t\t\t\tSetting attribute 3", slot, value);
+                else:                                        
                     setattr(message, slot, value)
 
 def dictionary_to_message(dictionary, cls):
@@ -396,17 +383,11 @@ def dictionary_to_message(dictionary, cls):
       y: 0.0
       z: 0.0
       w: 0.0
-    """
-    # rospy.logwarn("\t\tIn dictionary_to_message(...)")
+    """    
 
     message = cls()
-
-    # rospy.logwarn("\t\tPost creation of message");
-    # print(message);
-
+    
     fill_message(message, dictionary)
-    # rospy.logwarn("\t\tPost fill_message");
-    # print(message);
 
     return message
 
@@ -558,14 +539,8 @@ def serialise_message(message):
         | message (ROS message): The message to serialise
     :Returns:
         | mongodb_store_msgs.msg.SerialisedMessage: A serialies copy of message
-    """
-    # rospy.logwarn("\t\tIn serialise_message(...)")
-    # buf=StringIO.StringIO()  
+    """    
     buf = io.BytesIO();
-    # print(type(message));    
-    # print(message);
-    # print(message.cloud.data);
-    # print(type(message.cloud.data));
     message.serialize(buf)
     serialised_msg = SerialisedMessage()
     serialised_msg.msg = buf.getvalue()
